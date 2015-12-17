@@ -1,7 +1,12 @@
 [package]
-authors = ["Machtan <jako3047@gmail.com>"]
+authors = ["Jakob Lautrup Nysom <jako3047@gmail.com>"]
 name = "cargo-linebreak"
-version = "0.1.2"
+version = "1.0.0"
+description = "A cargo subcommand for printing linebreaks when using cargo-watch"
+repository = "https://github.com/Machtan/cargo-linebreak"
+readme = "README.md"
+keywords = ["cargo", "subcommand"]
+license = "MIT"
 
 [dependencies]
 argparse = "0.2.1"

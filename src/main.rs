@@ -43,7 +43,7 @@ fn main() {
             title = "cargo linebreak"
         }
         
-        parser.set_title(title);
+        //parser.set_title(title); // Coming after argparse 0.2.2
         
         parser.set_description("
         Prints a line of characters based on input.

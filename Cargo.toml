@@ -9,5 +9,4 @@ keywords = ["cargo", "subcommand"]
 license = "MIT"
 
 [dependencies]
-#argparse = "0.2.1"
-argparse = { git = "https://github.com/Machtan/rust-argparse" }
+argparse = "0.2.1"

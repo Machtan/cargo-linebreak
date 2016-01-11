@@ -6,7 +6,7 @@ description = "A cargo subcommand for printing linebreaks when using cargo-watch
 repository = "https://github.com/Machtan/cargo-linebreak"
 readme = "README.md"
 keywords = ["cargo", "subcommand"]
-license = "MIT"
+license = "MIT OR Apache-2.0"
 
 [dependencies]
 argparse = "0.2.1"

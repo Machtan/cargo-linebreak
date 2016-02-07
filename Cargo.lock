@@ -2,11 +2,11 @@
 name = "cargo-linebreak"
 version = "1.0.1"
 dependencies = [
- "argparse 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "argonaut 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
-name = "argparse"
-version = "0.2.1"
+name = "argonaut"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 

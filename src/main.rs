@@ -1,75 +1,96 @@
-extern crate argparse;
+extern crate argonaut;
 
-use argparse::{ArgumentParser, Store};
+use argonaut::{Parser, Arg};
+use argonaut::ParseStatus::{Parsed, Interrupted};
+use std::env;
 use std::str::FromStr;
-use std::ops::Deref;
 
-// Wrap chars to make them deserializable from a string
-struct Char(char);
+const USAGE: &'static str = "Usage: cargo linebreak <ignored> [options]";
+const HELP: &'static str = "\
+Prints a line of characters to fill a line with. 
+Intended to be used with the cargo-watch tool, 
+eg: 'cargo watch linebreak check'.
 
-impl FromStr for Char {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Char, Self::Err> {
-        match s.chars().count() {
-            0 => Err("The string is empty!".to_string()),
-            1 => Ok(Char(s.chars().last().unwrap())),
-            _ => Err("The string is more than 1 character long!".to_string())
-        }
-    }
-}
+Optional arguments:
+ignored         The first trailing argument is ignored, to be compatible with 
+                cargo subcommand invocation.
+--text | -t     Set the text or character to fill the line with. Default: '='.
+--length | -n   The maximum length of the filled line. Default: 80.
+--prefix | -p   Text to print before the line. Default: '\\n'.
+--suffix | -s   Text to print after the line. Default: '\\n'.
 
-impl Deref for Char {
-    type Target = char;
-    
-    fn deref(&self) -> &char {
-        let Char(ref c) = *self;
-        c
-    }
-}
+--version       Show the SemVer version of this tool.
+--help | -h     Show this help message.\
+";
 
 // Entry point
-fn main() {    
-    let mut ch = Char('=');
-    let mut prefix = "\n".to_string();
-    let mut suffix = "\n".to_string();
-    let mut n: usize = 80;
-    let mut run_from_cargo = "".to_string();
-    {
-        let mut parser = ArgumentParser::new();
-        let mut title = "cargo-linebreak";
-        
-        let args: Vec<String> = std::env::args().collect();
-        if args.len() > 1 && args[1] == "linebreak" {
-            title = "cargo linebreak"
-        }
-        
-        //parser.set_title(title); // Coming after argparse 0.2.2
-        
-        parser.set_description("
-        Prints a line of characters based on input.
-        Intended to be used with the cargo-watch tool,
-        eg: 'cargo watch linebreak check'
-        ");
-        
-        parser.refer(&mut run_from_cargo).add_argument("linebreak", Store,
-            "Workaround for cargo passing the name of the subcommand");
-        
-        parser.refer(&mut ch).add_option(&["-c", "--char"], Store, 
-            "The character to fill the line with. Default '='");
-        
-        parser.refer(&mut n).add_option(&["-n", "--line-length"], Store, 
-            "The length of the filled line. Default 80");
-        
-        parser.refer(&mut prefix).add_option(&["-p", "--prefix"], Store,
-            "The text to print before the line. Default \"\\n\"");
-        
-        parser.refer(&mut suffix).add_option(&["-s", "--suffix"], Store,
-            "The text to print after the line. Default \"\\n\"");
-        
-        parser.parse_args_or_exit();
-        
-        
+fn main() {  
+    
+    let arg_vec: Vec<_> = env::args().skip(1).collect();
+    let mut args: Vec<&str> = Vec::new();
+    for arg in arg_vec.iter() {
+        args.push(arg);
     }
-    let line: String = (0..n).map(|_| {let Char(c) = ch; c}).collect();
-    println!("{}{}{}", prefix, line, suffix);
+    
+    let a_ignored = Arg::optional_trail();
+    let a_text = Arg::named_and_short("text", 't').single();
+    let a_length = Arg::named_and_short("length", 'n').single();
+    let a_prefix = Arg::named_and_short("prefix", 'p').single();
+    let a_suffix = Arg::named_and_short("suffix", 's').single();
+    let a_version = Arg::named("version").interrupt();
+    let a_help = Arg::named_and_short("help", 'h').interrupt();
+    
+    let mut parser = Parser::new();
+    parser.add(&a_ignored).unwrap();
+    parser.add(&a_text).unwrap();
+    parser.add(&a_length).unwrap();
+    parser.add(&a_prefix).unwrap();
+    parser.add(&a_suffix).unwrap();
+    parser.add(&a_version).unwrap();
+    parser.add(&a_help).unwrap();    
+    
+    match parser.parse(&args) {
+        Ok(Parsed(parsed)) => {
+            let fill_text = parsed.named("text").single().unwrap()
+                .unwrap_or("=");
+            let length_val = parsed.named("length").single().unwrap();
+            let length = if let Some(arg) = length_val {
+                match usize::from_str(arg) {
+                    Ok(val) => val,
+                    Err(_) => {
+                        println!("Invalid length given: {}", arg);
+                        println!("{}", USAGE);
+                        return;
+                    }
+                }
+            } else {
+                80
+            };
+            let prefix = parsed.named("prefix").single().unwrap()
+                .unwrap_or("\n");
+            let suffix = parsed.named("suffix").single().unwrap()
+                .unwrap_or("\n");
+            
+            let mut line = String::new();
+            while line.len() + fill_text.len() <= length {
+                line.push_str(fill_text);
+            }
+            
+            println!("{}{}{}", prefix, line, suffix);
+        },
+        Ok(Interrupted(flag)) => {
+            match flag {
+                "version" => {
+                    println!("{}", env!("CARGO_PKG_VERSION"));
+                },
+                "help" => {
+                    println!("{}\n\n{}", USAGE, HELP);
+                }
+                _ => unreachable!(),
+            }
+        },
+        Err(error) => {
+            println!("Parse error: {:?}", error);
+        }
+    }
 }

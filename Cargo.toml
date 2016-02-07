@@ -2,7 +2,7 @@
 authors = ["Jakob Lautrup Nysom <jako3047@gmail.com>"]
 description = "A cargo subcommand for printing linebreaks when using cargo-watch"
 keywords = ["cargo", "subcommand"]
-license = "MIT"
+license = "MIT OR Apache-2.0"
 name = "cargo-linebreak"
 readme = "README.md"
 repository = "https://github.com/Machtan/cargo-linebreak"

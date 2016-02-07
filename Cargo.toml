@@ -9,4 +9,4 @@ keywords = ["cargo", "subcommand"]
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-argparse = "0.2.1"
+argparse = "0.3.0"

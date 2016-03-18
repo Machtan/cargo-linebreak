@@ -1,7 +1,6 @@
 extern crate argonaut;
 
-use argonaut::{Parser, Arg};
-use argonaut::ParseStatus::{Parsed, Interrupted};
+use argonaut::{Parse, ArgDef};
 use std::env;
 use std::str::FromStr;
 
@@ -25,72 +24,65 @@ ignored         The first trailing argument is ignored, to be compatible with
 
 // Entry point
 fn main() {  
+    use argonaut::Arg::*;
     
-    let arg_vec: Vec<_> = env::args().skip(1).collect();
-    let mut args: Vec<&str> = Vec::new();
-    for arg in arg_vec.iter() {
-        args.push(arg);
-    }
+    let a_ignored = ArgDef::optional_trail();
+    let a_text = ArgDef::named_and_short("text", 't').option();
+    let a_length = ArgDef::named_and_short("length", 'n').option();
+    let a_prefix = ArgDef::named_and_short("prefix", 'p').option();
+    let a_suffix = ArgDef::named_and_short("suffix", 's').option();
+    let a_version = ArgDef::named("version").switch();
+    let a_help = ArgDef::named_and_short("help", 'h').switch();
     
-    let a_ignored = Arg::optional_trail();
-    let a_text = Arg::named_and_short("text", 't').single();
-    let a_length = Arg::named_and_short("length", 'n').single();
-    let a_prefix = Arg::named_and_short("prefix", 'p').single();
-    let a_suffix = Arg::named_and_short("suffix", 's').single();
-    let a_version = Arg::named("version").interrupt();
-    let a_help = Arg::named_and_short("help", 'h').interrupt();
+    let expected = &[a_ignored, a_text, a_length, a_prefix, a_suffix, a_version,
+        a_help];  
+    let args: Vec<_> = env::args().skip(1).collect();
     
-    let mut parser = Parser::new();
-    parser.add(&a_ignored).unwrap();
-    parser.add(&a_text).unwrap();
-    parser.add(&a_length).unwrap();
-    parser.add(&a_prefix).unwrap();
-    parser.add(&a_suffix).unwrap();
-    parser.add(&a_version).unwrap();
-    parser.add(&a_help).unwrap();    
+    let mut fill_text = "=";
+    let mut length = 80;
+    let mut prefix = "\n";
+    let mut suffix = "\n";
     
-    match parser.parse(&args) {
-        Ok(Parsed(parsed)) => {
-            let fill_text = parsed.named("text").single().unwrap()
-                .unwrap_or("=");
-            let length_val = parsed.named("length").single().unwrap();
-            let length = if let Some(arg) = length_val {
-                match usize::from_str(arg) {
-                    Ok(val) => val,
-                    Err(_) => {
-                        println!("Invalid length given: {}", arg);
-                        println!("{}", USAGE);
-                        return;
-                    }
-                }
-            } else {
-                80
-            };
-            let prefix = parsed.named("prefix").single().unwrap()
-                .unwrap_or("\n");
-            let suffix = parsed.named("suffix").single().unwrap()
-                .unwrap_or("\n");
-            
-            let mut line = String::new();
-            while line.len() + fill_text.len() <= length {
-                line.push_str(fill_text);
-            }
-            
-            println!("{}{}{}", prefix, line, suffix);
-        },
-        Ok(Interrupted(flag)) => {
-            match flag {
-                "version" => {
-                    println!("{}", env!("CARGO_PKG_VERSION"));
-                },
-                "help" => {
-                    println!("{}\n\n{}", USAGE, HELP);
-                }
-                _ => unreachable!(),
-            }
-        },
-        Err(error) => {
-            println!("Parse error: {:?}", error);
+    let mut parse = Parse::new(expected, &args).expect("Invalid definitions");
+    while let Some(item) = parse.next() {
+        match item {
+            Err(err) => {
+                println!("Parse error: {:?}", err);
+                println!("{}", USAGE);
+            },
+            Ok(Option("text", value)) => {
+                fill_text = value;
+            },
+            Ok(Option("length", value)) => {
+                length = if let Ok(val) = usize::from_str(value) {
+                    val
+                } else {
+                    println!("Invalid length given: {}", value);
+                    println!("{}", USAGE);
+                    return;
+                };
+            },
+            Ok(Option("prefix", value)) => {
+                prefix = value;
+            },
+            Ok(Option("suffix", value)) => {
+                suffix = value;
+            },
+            Ok(Switch("version")) => {
+                println!("{}", env!("CARGO_PKG_VERSION"));
+                return;
+            },
+            Ok(Switch("help")) => {
+                println!("{}\n\n{}", USAGE, HELP);
+                return;
+            },
+            Ok(_) => unreachable!(),
         }
     }
+    
+    let mut line = String::new();
+    while line.len() + fill_text.len() <= length {
+        line.push_str(fill_text);
+    }
+    println!("{}{}{}", prefix, line, suffix);
 }

@@ -9,4 +9,4 @@ repository = "https://github.com/Machtan/cargo-linebreak"
 version = "2.0.0"
 
 [dependencies]
-argonaut = "0.7.0"
+argonaut = "0.11.0"

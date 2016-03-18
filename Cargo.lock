@@ -1,12 +1,12 @@
 [root]
 name = "cargo-linebreak"
-version = "1.0.1"
+version = "2.0.0"
 dependencies = [
- "argonaut 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "argonaut 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "argonaut"
-version = "0.7.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
